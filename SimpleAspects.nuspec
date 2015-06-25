@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <id>SimpleAspects</id>
+        <version>1.0.1</version>
+        <title>SimpleAspects</title>
+        <authors>Henrique Cesar,Angelo Belchior</authors>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>A Simple AOP Framework.</description>
+        <language>en-US</language>
+        <tags>AOP Aspects</tags>
+    </metadata>
+    <files>
+        <file src="..\Simple.AOP\src\Simple.AOP\bin\Release\Simple.AOP.dll" target="Simple.AOP.dll" />
+        <file src="..\Simple.AOP\src\Simple.AOP\bin\Release\Simple.AOP.XML" target="Simple.AOP.XML" />
+    </files>
+</package>
