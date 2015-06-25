@@ -14,6 +14,7 @@ namespace Simple
         private static readonly Type InterfaceType = typeof(TInterfaceType);
         public static Type Type { get; private set; }
         public static readonly Func<TInterfaceType, TInterfaceType> ObjectBuilder = CreateProxyBuilder();
+        private static Exception Error;
 
         private static Func<TInterfaceType, TInterfaceType> CreateProxyBuilder()
         {
@@ -26,6 +27,7 @@ namespace Simple
             }
             catch(Exception ex)
             {
+                Error = ex;
                 return (o) => { throw ex; };
             }
 
@@ -38,10 +40,12 @@ namespace Simple
             if (!InterfaceType.IsInterface)
                 throw new NotSupportedException("An interface was expected, but a type was found: " + InterfaceType.FullName);
 
+            if (!InterfaceType.IsPublic)
+                throw new NotSupportedException("The proxy interface must be public.");
+
             var module = SimpleModuleBuilder.Instance;
 
             TypeBuilder typeBuilder = module.DefineType(InterfaceType.Name + "_AOPProxy", TypeAttributes.Public, typeof(ProxyBase));
-
             FieldBuilder realObjectField = typeBuilder.DefineField("realObject", InterfaceType, FieldAttributes.Private);
 
             //Construtor
@@ -73,7 +77,6 @@ namespace Simple
 
                 //il.Emit(OpCodes.Ldstr, "Method Invoked: " + method.Name);
                 //il.EmitCall(OpCodes.Call, typeof(Debug).GetMethod("WriteLine", new[] { typeof(string) }), Type.EmptyTypes);
-
 
                 var lbCallBase = il.DefineLabel();
                 var lbReturn = il.DefineLabel();
@@ -161,12 +164,10 @@ namespace Simple
                 }
               
                 il.Emit(OpCodes.Ret);
-
                 typeBuilder.DefineMethodOverride(newMethod, method);
             }
 
             typeBuilder.AddInterfaceImplementation(InterfaceType);
-
             var ret = typeBuilder.CreateType();
 
             foreach (var aspectField in aspectFields)
@@ -179,7 +180,10 @@ namespace Simple
         }
 
         public static TInterfaceType Create(TInterfaceType baseType)
-        {
+        { 
+            if (Error != null)
+                throw Error;
+
             return ObjectBuilder(baseType);
         }
 
