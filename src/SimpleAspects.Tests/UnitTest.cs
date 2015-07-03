@@ -57,7 +57,7 @@ namespace Simple.Tests
 
         [TestMethod]
         public void ParametersShouldBePassedProperly()
-        { 
+        {
             MethodContext startContext = null;
             MethodContext endContext = null;
 
@@ -68,13 +68,13 @@ namespace Simple.Tests
 
             var proxy = AspectFactory.Create<IParameterPassingTest>(obj);
 
-            bool ok = proxy.Test(obj.P1, obj.P2, obj.P3, obj.P4, obj.P5, obj.P6);
+            bool ok = proxy.Test(obj.PInt, obj.PString, obj.PDateTime, obj.PLong, obj.PBool, obj.PArray);
 
             Assert.IsTrue(ok, "Parameters was ok on real object.");
             Assert.IsNotNull(startContext, "InterceptStart was called.");
-            Assert.IsNotNull(endContext, "InterceptEnd was called.");        
-    
-            var parameters = new object[]{obj.P1, obj.P2, obj.P3, obj.P4, obj.P5, obj.P6};
+            Assert.IsNotNull(endContext, "InterceptEnd was called.");
+
+            var parameters = new object[] { obj.PInt, obj.PString, obj.PDateTime, obj.PLong, obj.PBool, obj.PArray };
             bool okInterceptParameters = startContext.Parameters.Select(i => i.Value).SequenceEqual(parameters);
             Assert.IsTrue(okInterceptParameters, "Parameters received in intercept method was ok on aspect.");
         }
@@ -84,7 +84,7 @@ namespace Simple.Tests
         public void MultipleAspectShouldIntercept()
         {
             MethodContext startContext1, startContext2, endContext1, endContext2;
-            startContext1 = startContext2 = endContext1 = endContext2 = null;            
+            startContext1 = startContext2 = endContext1 = endContext2 = null;
 
             TestAspectAttribute.InterceptStartCallback = (ctx) => startContext1 = ctx;
             TestAspectAttribute.InterceptEndCallback = (ctx) => endContext1 = ctx;
@@ -99,9 +99,25 @@ namespace Simple.Tests
 
             Assert.IsNotNull(startContext1, "InterceptStart1 was called.");
             Assert.IsNotNull(endContext1, "InterceptEnd1 was called.");
-            Assert.IsNotNull(startContext2, "InterceptStart2 was called."); 
+            Assert.IsNotNull(startContext2, "InterceptStart2 was called.");
             Assert.IsNotNull(endContext2, "InterceptEnd2 was called.");
         }
 
+
+        [TestMethod]
+        public void ShouldProxyParameterlessMethods()
+        {
+
+            var obj = new ParameterPassingTest(pInt: 99, pString: "teste");
+
+            var proxy = AspectFactory.Create<IParameterPassingTest4>(obj);
+            
+            proxy.Test4Void();
+            int vInt = proxy.Test4Int();
+            string vString = proxy.Test4String();
+
+            Assert.AreEqual(obj.Test4Int(), vInt);
+            Assert.AreEqual(obj.Test4String(), vString);
+        }
     }
 }

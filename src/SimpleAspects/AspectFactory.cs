@@ -32,7 +32,8 @@ namespace Simple
         /// <returns></returns>
         public static TInterfaceType Create<TInterfaceType>(TInterfaceType realObject)
         {
-            return Create(() => realObject);
+            var ret = Create(() => realObject);
+            return ret;
         }
         /// <summary>
         /// Creates an proxy for an object.
@@ -54,6 +55,16 @@ namespace Simple
         public static TInterfaceType Create<TInterfaceType>(Func<TInterfaceType> realObjecteBuilder)
         {
             return ProxyBuilder<TInterfaceType>.Create(realObjecteBuilder());
+        }
+
+        /// <summary>
+        /// Gets the proxy type.
+        /// </summary>
+        /// <typeparam name="TInterfaceType"></typeparam>
+        /// <returns></returns>
+        public static Type GetProxyType<TInterfaceType>()
+        {
+            return ProxyBuilder<TInterfaceType>.ProxyType;
         }
 
         /// <summary>

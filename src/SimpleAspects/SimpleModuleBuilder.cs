@@ -11,6 +11,7 @@ namespace Simple
     internal class SimpleModuleBuilder
     {
         public static readonly ModuleBuilder Instance = CreateModule();
+        public static AssemblyBuilder AssemblyBuilder { get; private set; }
 
         private static ModuleBuilder CreateModule()
         {
@@ -18,8 +19,7 @@ namespace Simple
             AssemblyName myAsmName = new AssemblyName();
             myAsmName.Name = "SimpleProxies.Assembly";
 
-            AssemblyBuilder asmBuilder = myDomain.DefineDynamicAssembly(myAsmName, AssemblyBuilderAccess.Run);
-
+            AssemblyBuilder asmBuilder = AssemblyBuilder = myDomain.DefineDynamicAssembly(myAsmName, AssemblyBuilderAccess.RunAndSave);
             ModuleBuilder module = asmBuilder.DefineDynamicModule("SimpleProxies.Module");
             return module;
         }
