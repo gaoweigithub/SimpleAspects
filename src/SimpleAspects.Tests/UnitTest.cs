@@ -15,6 +15,7 @@ namespace Simple.Tests
             TestAspectAttribute.ClearCallbacks();
             TestAspect2Attribute.ClearCallbacks();
             AspectFactory.ClearGlobalAspects();
+            AspectFactory.ClearCache<IParameterPassingTest>();
         }
 
 
@@ -110,7 +111,7 @@ namespace Simple.Tests
 
             var obj = new ParameterPassingTest(pInt: 99, pString: "teste");
 
-            var proxy = AspectFactory.Create<IParameterPassingTest4>(obj);
+            var proxy = AspectFactory.Create<IParameterPassingTest>(obj);
             
             proxy.Test4Void();
             int vInt = proxy.Test4Int();

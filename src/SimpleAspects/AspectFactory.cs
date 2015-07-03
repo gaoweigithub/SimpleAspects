@@ -21,7 +21,7 @@ namespace Simple
         /// <returns></returns>
         public static Func<TInterfaceType, TInterfaceType> GetBuilder<TInterfaceType>()
         {
-            return ProxyBuilder<TInterfaceType>.ObjectBuilder;
+            return ProxyBuilder<TInterfaceType>.Builder;
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace Simple
         /// <returns></returns>
         public static TInterfaceType Create<TInterfaceType>(Func<TInterfaceType> realObjecteBuilder)
         {
-            return ProxyBuilder<TInterfaceType>.Create(realObjecteBuilder());
+            return ProxyBuilder<TInterfaceType>.Builder(realObjecteBuilder());
         }
 
         /// <summary>
@@ -82,6 +82,16 @@ namespace Simple
         public static void ClearGlobalAspects()
         {
             GlobalAspects.Clear();
+        }
+
+        /// <summary>
+        /// Clear builder cache.
+        /// </summary>
+        /// <typeparam name="TInterfaceType"></typeparam>
+        public static void ClearCache<TInterfaceType>()
+        {
+            ProxyBuilder<TInterfaceType>.ClearCache();
+            SimpleModuleBuilder.ClearCache();
         }
     }
 }

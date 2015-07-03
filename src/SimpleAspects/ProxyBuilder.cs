@@ -9,32 +9,74 @@ using System.Threading;
 
 namespace Simple
 {
-    internal class ProxyBuilder<TInterfaceType>
+    internal static class ProxyBuilder<TInterfaceType>
     {
         private static readonly Type interfaceType = typeof(TInterfaceType);
-        private static Type proxyType;
-        private static Exception buildException;
 
-        public static Type ProxyType { get { if (buildException != null) throw buildException; return proxyType; } }
-        public static readonly Func<TInterfaceType, TInterfaceType> ObjectBuilder = CreateProxyBuilder();
+        private static Type _proxyType;
+        private static Func<TInterfaceType, TInterfaceType> _builder;
+        private static Exception _buildException;
 
-        private static Func<TInterfaceType, TInterfaceType> CreateProxyBuilder()
+        private static bool IsReady
+        {
+            get
+            {
+                return _buildException != null || _proxyType != null;
+            }
+        }
+
+        public static Type ProxyType
+        {
+            get
+            {
+                if (!IsReady)
+                    CreateProxyBuilder();
+
+                if (_buildException != null)
+                    throw _buildException; 
+
+                return _proxyType;
+            }
+        }
+        public static Func<TInterfaceType, TInterfaceType> Builder
+        {
+            get
+            {
+                if (!IsReady)
+                    CreateProxyBuilder();
+
+                if (_buildException != null)
+                    throw _buildException; 
+
+                return _builder;
+            }
+        }
+
+        public static void ClearCache()
+        {
+            _builder = null;
+            _buildException = null;
+            _proxyType = null;
+        }
+
+
+        private static void CreateProxyBuilder()
         {
             if (AspectFactory.GlobalAspects.Count == 0 && !interfaceType.GetMethods(BindingFlags.Public | BindingFlags.Instance).Any(i => i.GetCustomAttributes(typeof(AspectAttribute), true) != null))
-                return (i) => i;
+                _builder = (i) => i;
 
             try
             {
-                proxyType = BuildType();
+                _proxyType = BuildType();
             }
             catch (Exception ex)
             {
-                buildException = ex;
-                return (o) => { throw ex; };
+                _buildException = ex;
+                _builder = (o) => { throw ex; };
             }
 
             Delegate deleg = Delegate.CreateDelegate(typeof(Func<TInterfaceType, TInterfaceType>), ProxyType.GetMethod("CreateProxy", BindingFlags.Public | BindingFlags.Static));
-            return (Func<TInterfaceType, TInterfaceType>)deleg;
+            _builder = (Func<TInterfaceType, TInterfaceType>)deleg;
         }
 
         private static Type BuildType()
@@ -176,15 +218,7 @@ namespace Simple
                     }
 
                     if (method.ReturnType != typeof(void))
-                    {
-                        il.Emit(OpCodes.Ldstr, "teste.txt");
                         il.Emit(OpCodes.Ldloc, returnLocal.LocalIndex);
-                        il.Emit(OpCodes.Box, method.ReturnType);
-                        il.EmitCall(OpCodes.Callvirt, typeof(object).GetMethod("ToString", Type.EmptyTypes), Type.EmptyTypes);
-                        il.EmitCall(OpCodes.Call, typeof(System.IO.File).GetMethod("AppendAllText", new[] { typeof(string), typeof(string) }), Type.EmptyTypes);
-
-                        il.Emit(OpCodes.Ldloc, returnLocal.LocalIndex);
-                    }
                 }               
 
                 il.Emit(OpCodes.Ret);
@@ -201,14 +235,6 @@ namespace Simple
             }
 
             return ret;
-        }
-
-        public static TInterfaceType Create(TInterfaceType baseType)
-        {
-            if (buildException != null)
-                throw buildException;
-
-            return ObjectBuilder(baseType);
         }
 
         private class AspectField

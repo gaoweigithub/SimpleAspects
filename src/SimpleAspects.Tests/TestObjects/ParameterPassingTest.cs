@@ -17,18 +17,13 @@ namespace Simple.Tests
 
         void Test3();
 
-       
-
-    }
-
-    public interface IParameterPassingTest4
-    {
         void Test4Void();
         int Test4Int();
         string Test4String();
+
     }
 
-    class ParameterPassingTest : IParameterPassingTest, IParameterPassingTest4
+    class ParameterPassingTest : IParameterPassingTest
     {
         public int PInt { get; private set; }
         public string PString { get; private set; }

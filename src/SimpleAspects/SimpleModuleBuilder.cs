@@ -10,18 +10,21 @@ namespace Simple
 {
     internal class SimpleModuleBuilder
     {
-        public static readonly ModuleBuilder Instance = CreateModule();
-        public static AssemblyBuilder AssemblyBuilder { get; private set; }
+        public static ModuleBuilder Instance { get; private set; }
 
-        private static ModuleBuilder CreateModule()
+        static SimpleModuleBuilder()
+        {
+            ClearCache();
+        }
+
+        internal static void ClearCache()
         {
             AppDomain myDomain = Thread.GetDomain();
             AssemblyName myAsmName = new AssemblyName();
             myAsmName.Name = "SimpleProxies.Assembly";
 
-            AssemblyBuilder asmBuilder = AssemblyBuilder = myDomain.DefineDynamicAssembly(myAsmName, AssemblyBuilderAccess.RunAndSave);
-            ModuleBuilder module = asmBuilder.DefineDynamicModule("SimpleProxies.Module");
-            return module;
+            AssemblyBuilder asmBuilder = myDomain.DefineDynamicAssembly(myAsmName, AssemblyBuilderAccess.RunAndSave);
+            Instance = asmBuilder.DefineDynamicModule("SimpleProxies.Module");
         }
     }
 }
