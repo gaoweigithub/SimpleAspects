@@ -21,6 +21,7 @@ namespace Simple.Tests
         int Test4Int();
         string Test4String();
 
+        void Teste5(out int v1, out string v2);
     }
 
     class ParameterPassingTest : IParameterPassingTest
@@ -72,6 +73,13 @@ namespace Simple.Tests
         public string Test4String()
         {
             return this.PString;
+        }
+
+
+        public void Teste5(out int v1, out string v2)
+        {
+            v1 = this.PInt;
+            v2 = this.PString;
         }
     }   
 }

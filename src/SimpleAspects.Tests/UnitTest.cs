@@ -120,5 +120,20 @@ namespace Simple.Tests
             Assert.AreEqual(obj.Test4Int(), vInt);
             Assert.AreEqual(obj.Test4String(), vString);
         }
+
+        [TestMethod]
+        public void ShouldProxyRefParameters()
+        {
+            var obj = new ParameterPassingTest(pInt: 99, pString: "teste");
+
+            var proxy = AspectFactory.Create<IParameterPassingTest>(obj);
+
+            int vInt;
+            string vString;
+            proxy.Teste5(out vInt, out vString);
+           
+            Assert.AreEqual(obj.PInt, vInt);
+            Assert.AreEqual(obj.PString, vString);
+        }
     }
 }
