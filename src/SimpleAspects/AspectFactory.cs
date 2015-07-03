@@ -79,7 +79,7 @@ namespace Simple
         /// <summary>
         /// Clear all global aspect.
         /// </summary>
-        public static void ClearGlobalAspects()
+        public static void ClearGlobalAspects() //Should be internal to tests
         {
             GlobalAspects.Clear();
         }
@@ -88,7 +88,7 @@ namespace Simple
         /// Clear builder cache.
         /// </summary>
         /// <typeparam name="TInterfaceType"></typeparam>
-        public static void ClearCache<TInterfaceType>()
+        public static void ClearCache<TInterfaceType>() //Should be internal to tests
         {
             ProxyBuilder<TInterfaceType>.ClearCache();
             SimpleModuleBuilder.ClearCache();
