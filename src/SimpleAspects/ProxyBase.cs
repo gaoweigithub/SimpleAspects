@@ -10,6 +10,7 @@ namespace Simple
     /// Not meant to be used.
     /// </summary>
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    [System.Diagnostics.DebuggerStepThrough]
     public abstract class ProxyBase
     {
         /// <summary>

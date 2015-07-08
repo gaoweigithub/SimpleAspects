@@ -9,6 +9,7 @@ namespace Simple
     /// <summary>
     /// Defines a method execution.
     /// </summary>
+    [System.Diagnostics.DebuggerStepThrough]
     public class MethodContext
     {
         /// <summary>
@@ -59,6 +60,17 @@ namespace Simple
                 return ret;
 
             return null;
+        }
+
+        /// <summary>
+        /// Gets or sets custom properties.
+        /// </summary>
+        /// <param name="property"></param>
+        /// <returns></returns>
+        public object this[string property]
+        {
+            get { return this.GetValue(property); }
+            set { this.SetValue(property, value); }
         }
     }
 }

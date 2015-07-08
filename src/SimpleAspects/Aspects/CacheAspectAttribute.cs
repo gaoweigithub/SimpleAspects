@@ -23,7 +23,9 @@ namespace Simple.Aspects
         public override sealed void InterceptStart(Simple.MethodContext method)
         {
             string key = GetKey(method);
+            method["Cache.Key"] = key;
             method.ReturnValue = this.GetObject(key);
+            method["Cache.Hit"] = method.ReturnValue != null;
         }
 
         /// <summary>
@@ -32,8 +34,13 @@ namespace Simple.Aspects
         /// <param name="method"></param>
         public override sealed void InterceptEnd(MethodContext method)
         {
-            string key = GetKey(method);
-            this.StoreObject(key, method.ReturnValue);
+            string key = (string)method["Cache.Key"];
+
+            bool cacheHit = (bool)method["Cache.Hit"];
+            if (cacheHit)
+                this.TouchObject(key, method.ReturnValue);
+            else
+                this.StoreObject(key, method.ReturnValue);
         }
 
         /// <summary>
@@ -63,6 +70,16 @@ namespace Simple.Aspects
         /// </summary>
         /// <param name="key"></param>
         /// <param name="obj"></param>
-        protected abstract void StoreObject(string key, object obj);       
+        protected abstract void StoreObject(string key, object obj);
+
+        /// <summary>
+        /// When implemented, allows to define new expiration date.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="obj"></param>
+        protected virtual void TouchObject(string key, object obj)
+        {
+
+        }
     }
 }
