@@ -51,7 +51,10 @@ namespace Simple.Aspects
         protected virtual string GetKey(MethodContext method)
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append(method.Method.Name);
+            sb
+                .Append(method.Method.DeclaringType.Name)
+                .Append(".")
+                .Append(method.Method.Name);
             foreach (var param in method.Parameters)
                 sb.Append("|").Append(param.Name).Append(":").Append(param.GetStringValue());
 
