@@ -33,7 +33,7 @@ namespace Simple
                     CreateProxyBuilder();
 
                 if (_buildException != null)
-                    throw _buildException; 
+                    throw _buildException;
 
                 return _proxyType;
             }
@@ -46,7 +46,7 @@ namespace Simple
                     CreateProxyBuilder();
 
                 if (_buildException != null)
-                    throw _buildException; 
+                    throw _buildException;
 
                 return _builder;
             }
@@ -130,13 +130,8 @@ namespace Simple
                 var objArrayLocal = il.DeclareLocal(typeof(object[]));
                 var attrs = method.GetCustomAttributes(typeof(AspectAttribute), false).Cast<AspectAttribute>().Concat(AspectFactory.GlobalAspects).ToList();
 
-                var currentMethodAspects = new List<AspectField>(); ;
-                foreach (var attr in attrs.OrderBy(i => i.Order))
+                if (attrs.Any())
                 {
-                    var field = typeBuilder.DefineField("aspectField_" + Guid.NewGuid(), typeof(AspectAttribute), FieldAttributes.Static | FieldAttributes.Private);
-                    aspectFields.Add(new AspectField { Aspect = attr, Field = field });
-                    currentMethodAspects.Add(new AspectField { Aspect = attr, Field = field });
-
                     il.Emit(OpCodes.Ldtoken, method);
                     il.Emit(OpCodes.Call, typeof(MethodBase).GetMethod("GetMethodFromHandle", new[] { typeof(RuntimeMethodHandle) }));
                     il.Emit(OpCodes.Castclass, typeof(MethodInfo)); //MethodInfo
@@ -158,6 +153,14 @@ namespace Simple
                     il.Emit(OpCodes.Ldloc, objArrayLocal.LocalIndex);
                     il.EmitCall(OpCodes.Call, typeof(ProxyBase).GetMethod("GetMethodContext", BindingFlags.Static | BindingFlags.NonPublic), Type.EmptyTypes);
                     il.Emit(OpCodes.Stloc, methodContextLocal.LocalIndex); //methodContextLocal = GetMethodContext(parameters);
+                }
+
+                var currentMethodAspects = new List<AspectField>();
+                foreach (var attr in attrs.OrderBy(i => i.Order))
+                {
+                    var field = typeBuilder.DefineField("aspectField_" + Guid.NewGuid(), typeof(AspectAttribute), FieldAttributes.Static | FieldAttributes.Private);
+                    aspectFields.Add(new AspectField { Aspect = attr, Field = field });
+                    currentMethodAspects.Add(new AspectField { Aspect = attr, Field = field });
 
                     il.Emit(OpCodes.Ldsfld, field);
                     il.Emit(OpCodes.Ldloc, methodContextLocal.LocalIndex);
@@ -219,7 +222,7 @@ namespace Simple
 
                     if (method.ReturnType != typeof(void))
                         il.Emit(OpCodes.Ldloc, returnLocal.LocalIndex);
-                }               
+                }
 
                 il.Emit(OpCodes.Ret);
                 typeBuilder.DefineMethodOverride(newMethod, method);
