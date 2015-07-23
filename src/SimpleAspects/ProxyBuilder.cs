@@ -136,6 +136,9 @@ namespace Simple
                     il.Emit(OpCodes.Call, typeof(MethodBase).GetMethod("GetMethodFromHandle", new[] { typeof(RuntimeMethodHandle) }));
                     il.Emit(OpCodes.Castclass, typeof(MethodInfo)); //MethodInfo
 
+                    il.Emit(OpCodes.Ldarg_0);
+                    il.Emit(OpCodes.Ldfld, realObjectField); //this.realObject
+
                     il.Emit(OpCodes.Ldc_I4, parameters.Length);
                     il.Emit(OpCodes.Newarr, typeof(object));
                     il.Emit(OpCodes.Stloc, objArrayLocal.LocalIndex); //var parameters = new object[parameters.Length];

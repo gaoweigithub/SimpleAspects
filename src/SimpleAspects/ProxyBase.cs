@@ -18,11 +18,12 @@ namespace Simple
         /// </summary>
         /// <param name="method"></param>
         /// <param name="parameters"></param>
+        /// <param name="realObject"></param>
         /// <returns></returns>
-        protected static MethodContext GetMethodContext(MethodInfo method, object[] parameters)
+        protected static MethodContext GetMethodContext(MethodInfo method, object realObject, object[] parameters)
         {
             var methodParameters = method.GetParameters().Select((param, idx) => new MethodParameter(param, parameters[idx])).ToList();
-            return new MethodContext(method, methodParameters);
+            return new MethodContext(method, realObject, methodParameters);
         }
     }
 }

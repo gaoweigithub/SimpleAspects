@@ -17,8 +17,10 @@ namespace Simple
         /// </summary>
         /// <param name="method"></param>
         /// <param name="parameters"></param>
-        public MethodContext(MethodInfo method, IList<MethodParameter> parameters)
+        /// <param name="realObject"></param>
+        public MethodContext(MethodInfo method, object realObject, IList<MethodParameter> parameters)
         {
+            this.RealObject = realObject;
             this.Method = method;
             this.Parameters = parameters;
         }
@@ -27,6 +29,10 @@ namespace Simple
         /// MethodInfo invoked.
         /// </summary>
         public MethodInfo Method { get; private set; }
+        /// <summary>
+        /// Real type of.
+        /// </summary>
+        public object RealObject { get; private set; }
         /// <summary>
         /// Parameters of invokation.
         /// </summary>
