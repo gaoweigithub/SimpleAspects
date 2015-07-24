@@ -11,7 +11,7 @@ namespace Simple.Tests
     {
         private Dictionary<string, object> cache = new Dictionary<string, object>();
 
-        protected override void StoreObject(string key, object value)
+        protected override void StoreObject(MethodContext method, string key, object value)
         {
 
             if (cache.ContainsKey(key))
@@ -20,7 +20,7 @@ namespace Simple.Tests
             cache.Add(key, value);
         }
 
-        protected override object GetObject(string key)
+        protected override object GetObject(MethodContext method, string key)
         {
             object ret;
             cache.TryGetValue(key, out ret);

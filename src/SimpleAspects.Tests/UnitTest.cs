@@ -124,16 +124,18 @@ namespace Simple.Tests
         [TestMethod]
         public void ShouldProxyRefParameters()
         {
-            var obj = new ParameterPassingTest(pInt: 99, pString: "teste");
+            var obj = new ParameterPassingTest(pInt: 99, pString: "teste", pDateTime: DateTime.Now);
 
             var proxy = AspectFactory.Create<IParameterPassingTest>(obj);
 
             int vInt;
             string vString;
-            proxy.Teste5(out vInt, out vString);
+            DateTime vDateTime;
+            proxy.Teste5(out vInt, out vString, out vDateTime);
            
             Assert.AreEqual(obj.PInt, vInt);
             Assert.AreEqual(obj.PString, vString);
+            Assert.AreEqual(obj.PDateTime, vDateTime);
         }
     }
 }

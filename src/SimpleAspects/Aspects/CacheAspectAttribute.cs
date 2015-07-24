@@ -24,7 +24,7 @@ namespace Simple.Aspects
         {
             string key = GetKey(method);
             method["Cache.Key"] = key;
-            method.ReturnValue = this.GetObject(key);
+            method.ReturnValue = this.GetObject(method, key);
             method["Cache.Hit"] = method.ReturnValue != null;
         }
 
@@ -38,9 +38,9 @@ namespace Simple.Aspects
 
             bool cacheHit = (bool)method["Cache.Hit"];
             if (cacheHit)
-                this.TouchObject(key, method.ReturnValue);
+                this.TouchObject(method, key, method.ReturnValue);
             else
-                this.StoreObject(key, method.ReturnValue);
+                this.StoreObject(method, key, method.ReturnValue);
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace Simple.Aspects
         {
             StringBuilder sb = new StringBuilder();
             sb
-                .Append(method.Method.DeclaringType.Name)
+                .Append(method.RealObject.GetType().Name)
                 .Append(".")
                 .Append(method.Method.Name);
             foreach (var param in method.Parameters)
@@ -64,23 +64,26 @@ namespace Simple.Aspects
         /// <summary>
         /// Gets object from defined cache storage. Should be implemented in derived class.
         /// </summary>
+        /// <param name="method"></param>
         /// <param name="key"></param>
         /// <returns></returns>
-        protected abstract object GetObject(string key);
+        protected abstract object GetObject(MethodContext method, string key);
 
         /// <summary>
         /// Sets object from defined cache storage. Should be implemented in derived class.
         /// </summary>
+        /// <param name="method"></param>
         /// <param name="key"></param>
         /// <param name="obj"></param>
-        protected abstract void StoreObject(string key, object obj);
+        protected abstract void StoreObject(MethodContext method, string key, object obj);
 
         /// <summary>
         /// When implemented, allows to define new expiration date.
         /// </summary>
+        /// <param name="method"></param>
         /// <param name="key"></param>
         /// <param name="obj"></param>
-        protected virtual void TouchObject(string key, object obj)
+        protected virtual void TouchObject(MethodContext method, string key, object obj)
         {
 
         }
