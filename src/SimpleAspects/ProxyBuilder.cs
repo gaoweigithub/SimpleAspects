@@ -33,7 +33,7 @@ namespace Simple
                     CreateProxyBuilder();
 
                 if (_buildException != null)
-                    throw _buildException;
+                    throw new InvalidOperationException("An error occurred while generating proxy.", _buildException);
 
                 return _proxyType;
             }
@@ -46,7 +46,7 @@ namespace Simple
                     CreateProxyBuilder();
 
                 if (_buildException != null)
-                    throw _buildException;
+                    throw new InvalidOperationException("An error occurred while generating proxy.", _buildException);
 
                 return _builder;
             }
@@ -151,13 +151,12 @@ namespace Simple
             var methodContextLocal = emitter.DeclareLocal(typeof(MethodContext));
             var returnLocal = method.ReturnType != typeof(void) ? emitter.DeclareLocal(method.ReturnType) : null;
             var objArrayLocal = emitter.DeclareLocal(typeof(object[]));
-            var aspects = method.GetCustomAttributes(typeof(AspectAttribute), false).Cast<AspectAttribute>().Concat(AspectFactory.GlobalAspects).ToList();
+            var exceptionLocal = emitter.DeclareLocal<Exception>();
 
+            var aspects = method.GetCustomAttributes(typeof(AspectAttribute), false).Cast<AspectAttribute>().Concat(AspectFactory.GlobalAspects).ToList();
             bool hasException = aspects.Any(i => i.GetType().GetMethod("ExceptionFilter").DeclaringType != typeof(AspectAttribute));
 
             Sigil.ExceptionBlock tryBlock = null;
-            if (hasException)
-                tryBlock = emitter.BeginExceptionBlock();
 
             string methodName = method.Name;
             if (aspects.Any())
@@ -216,6 +215,9 @@ namespace Simple
             //Chama o método base
             emitter.MarkLabel(lbCallBase);
 
+            if (hasException)
+                tryBlock = emitter.BeginExceptionBlock();
+
             if (aspects.Any() && method.ReturnType != typeof(void))  //Armazena o objeto retornado no ReturnValue caso haja aspectos
                 emitter.LoadLocal(methodContextLocal);
 
@@ -243,7 +245,6 @@ namespace Simple
             if (hasException)
             {
                 var catchBlock = emitter.BeginCatchBlock<Exception>(tryBlock);
-                var exceptionLocal = emitter.DeclareLocal<Exception>();
                 emitter.StoreLocal(exceptionLocal);
 
                 foreach (var aspect in currentMethodAspects.Where(i => i.Aspect.GetType().GetMethod("ExceptionFilter").DeclaringType != typeof(AspectAttribute)))
