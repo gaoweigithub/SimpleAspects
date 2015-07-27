@@ -137,5 +137,22 @@ namespace Simple.Tests
             Assert.AreEqual(obj.PString, vString);
             Assert.AreEqual(obj.PDateTime, vDateTime);
         }
+
+        [TestMethod]
+        public void ShouldFilterException()
+        {
+            Exception filteredException = null;
+            ExceptionFilterAspect.DefaultHandler += (ex) => filteredException = ex;
+            var proxy = AspectFactory.Create<IExceptionFilterTest>(new ExceptionFilterTest());
+
+            try
+            {
+                proxy.RaiseException();
+            }
+            catch(Exception ex)
+            {
+                Assert.AreEqual(ex, filteredException);
+            }
+        }
     }
 }

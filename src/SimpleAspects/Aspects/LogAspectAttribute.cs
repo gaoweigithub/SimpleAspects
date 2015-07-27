@@ -12,15 +12,15 @@ namespace Simple.Aspects
     public abstract class LogAspectAttribute : AspectAttribute
     {
         /// <summary>
-        /// Defines order to interception. Lower order gets InterceptStart executed earlier, while InterceptEnd is executed later.
+        /// Defines order to interception. Lower priority gets MethodEnter called earlier.
         /// </summary>
-        protected internal override int Order { get { return int.MinValue; } }
+        protected internal override int EnterPriority { get { return int.MinValue; } }
 
         /// <summary>
         /// Method executed before real method execution. If ReturnValue is set, the real method body is not executed.
         /// </summary>
         /// <param name="method"></param>
-        public override sealed void InterceptStart(Simple.MethodContext method)
+        public override sealed void MethodEnter(Simple.MethodContext method)
         {
             method.SetValue("sw", Stopwatch.StartNew());
         }
@@ -29,7 +29,7 @@ namespace Simple.Aspects
         /// Method executed after real method execution.
         /// </summary>
         /// <param name="method"></param>
-        public override sealed void InterceptEnd(MethodContext method)
+        public override sealed void MethodExit(MethodContext method)
         {
             var sw = method.GetValue("sw") as Stopwatch;
             var logEntry = new LogEntry(method, sw.Elapsed, method.ReturnValue);

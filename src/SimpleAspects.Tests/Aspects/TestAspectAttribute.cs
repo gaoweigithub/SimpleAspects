@@ -10,13 +10,13 @@ namespace Simple.Tests
         public static Action<MethodContext> InterceptStartCallback;
         public static Action<MethodContext> InterceptEndCallback;
 
-        public override void InterceptStart(MethodContext method)
+        public override void MethodEnter(MethodContext method)
         {
             if (InterceptStartCallback != null)
                 InterceptStartCallback(method);
         }
 
-        public override void InterceptEnd(MethodContext method)
+        public override void MethodExit(MethodContext method)
         {
             if (InterceptEndCallback != null)
                 InterceptEndCallback(method);
@@ -34,13 +34,13 @@ namespace Simple.Tests
         public static Action<MethodContext> InterceptStartCallback;
         public static Action<MethodContext> InterceptEndCallback;
 
-        public override void InterceptStart(MethodContext method)
+        public override void MethodEnter(MethodContext method)
         {
             if (InterceptStartCallback != null)
                 InterceptStartCallback(method);
         }
 
-        public override void InterceptEnd(MethodContext method)
+        public override void MethodExit(MethodContext method)
         {
             if (InterceptEndCallback != null)
                 InterceptEndCallback(method);

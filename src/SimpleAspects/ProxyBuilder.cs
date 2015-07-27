@@ -151,12 +151,17 @@ namespace Simple
             var methodContextLocal = emitter.DeclareLocal(typeof(MethodContext));
             var returnLocal = method.ReturnType != typeof(void) ? emitter.DeclareLocal(method.ReturnType) : null;
             var objArrayLocal = emitter.DeclareLocal(typeof(object[]));
-            var attrs = method.GetCustomAttributes(typeof(AspectAttribute), false).Cast<AspectAttribute>().Concat(AspectFactory.GlobalAspects).ToList();
+            var aspects = method.GetCustomAttributes(typeof(AspectAttribute), false).Cast<AspectAttribute>().Concat(AspectFactory.GlobalAspects).ToList();
+
+            bool hasException = aspects.Any(i => i.GetType().GetMethod("ExceptionFilter").DeclaringType != typeof(AspectAttribute));
+
+            Sigil.ExceptionBlock tryBlock = null;
+            if (hasException)
+                tryBlock = emitter.BeginExceptionBlock();
 
             string methodName = method.Name;
-            if (attrs.Any())
+            if (aspects.Any())
             {
-                Console.WriteLine(methodName);
                 emitter
                     .LoadConstant(parameters.Length)
                     .NewArray<object>()
@@ -187,16 +192,16 @@ namespace Simple
             }
 
             var currentMethodAspects = new List<AspectField>();
-            foreach (var attr in attrs.OrderBy(i => i.Order))
+            foreach (var aspect in aspects.OrderBy(i => i.EnterPriority))
             {
                 var field = typeBuilder.DefineField("aspectField_" + Guid.NewGuid(), typeof(AspectAttribute), FieldAttributes.Static | FieldAttributes.Private);
-                aspectFields.Add(new AspectField { Aspect = attr, Field = field });
-                currentMethodAspects.Add(new AspectField { Aspect = attr, Field = field });
+                aspectFields.Add(new AspectField { Aspect = aspect, Field = field });
+                currentMethodAspects.Add(new AspectField { Aspect = aspect, Field = field });
 
                 emitter
                     .LoadField(field)
                     .LoadLocal(methodContextLocal)
-                    .CallVirtual(typeof(AspectAttribute).GetMethod("InterceptStart", BindingFlags.Instance | BindingFlags.Public));
+                    .CallVirtual(typeof(AspectAttribute).GetMethod(GetName(aspect.MethodEnter), BindingFlags.Instance | BindingFlags.Public));
 
 
                 if (method.ReturnType != typeof(void))
@@ -211,7 +216,7 @@ namespace Simple
             //Chama o método base
             emitter.MarkLabel(lbCallBase);
 
-            if (attrs.Any() && method.ReturnType != typeof(void))  //Armazena o objeto retornado no ReturnValue caso haja aspectos
+            if (aspects.Any() && method.ReturnType != typeof(void))  //Armazena o objeto retornado no ReturnValue caso haja aspectos
                 emitter.LoadLocal(methodContextLocal);
 
             emitter
@@ -227,7 +232,7 @@ namespace Simple
 
 
             //Armazena o objeto retornado no ReturnValue caso haja aspectos
-            if (method.ReturnType != typeof(void) && attrs.Any())
+            if (method.ReturnType != typeof(void) && aspects.Any())
             {
                 emitter
                     .LoadLocal(returnLocal)
@@ -235,18 +240,37 @@ namespace Simple
                     .Call(typeof(MethodContext).GetProperty("ReturnValue").GetSetMethod());
             }
 
+            if (hasException)
+            {
+                var catchBlock = emitter.BeginCatchBlock<Exception>(tryBlock);
+                var exceptionLocal = emitter.DeclareLocal<Exception>();
+                emitter.StoreLocal(exceptionLocal);
+
+                foreach (var aspect in currentMethodAspects.Where(i => i.Aspect.GetType().GetMethod("ExceptionFilter").DeclaringType != typeof(AspectAttribute)))
+                    emitter
+                        .LoadField(aspect.Field)
+                        .LoadLocal(exceptionLocal)
+                        .CallVirtual(typeof(AspectAttribute).GetMethod("ExceptionFilter", BindingFlags.Instance | BindingFlags.Public)); ;
+
+                emitter
+                    .ReThrow()
+                    .EndCatchBlock(catchBlock)
+                    .EndExceptionBlock(tryBlock);
+            }
+
+
             emitter.MarkLabel(lbReturn);
-            foreach (var aspects in currentMethodAspects.OrderByDescending(i => i.Aspect.Order))
+            foreach (var aspect in currentMethodAspects.OrderBy(i => i.Aspect.ExitPriority))
             {
                 emitter
-                    .LoadField(aspects.Field)
+                    .LoadField(aspect.Field)
                     .LoadLocal(methodContextLocal)
-                    .CallVirtual(typeof(AspectAttribute).GetMethod("InterceptEnd", BindingFlags.Instance | BindingFlags.Public));
+                    .CallVirtual(typeof(AspectAttribute).GetMethod(GetName(aspect.Aspect.MethodExit), BindingFlags.Instance | BindingFlags.Public));
             }
 
             if (method.ReturnType != typeof(void))
             {
-                if (attrs.Any())
+                if (aspects.Any())
                 {
                     emitter
                         .LoadLocal(methodContextLocal)
@@ -264,6 +288,16 @@ namespace Simple
 
             var newMethod = emitter.CreateMethod();
             typeBuilder.DefineMethodOverride(newMethod, method);
+        }
+
+        private static string GetName(Action<MethodContext> action)
+        {
+            return action.Method.Name;
+        }
+
+        private static string GetName(Action<Exception> action)
+        {
+            return action.Method.Name;
         }
 
         private class AspectField

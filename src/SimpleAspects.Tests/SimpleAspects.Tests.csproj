@@ -56,7 +56,9 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="Aspects\ExceptionFilterAttribute.cs" />
     <Compile Include="Aspects\MemoryCacheAspectAttribute.cs" />
+    <Compile Include="TestObjects\ExceptionFilterTest.cs" />
     <Compile Include="TestObjects\ParameterPassingTest.cs" />
     <Compile Include="Aspects\TestAspectAttribute.cs" />
     <Compile Include="UnitTest.cs" />
