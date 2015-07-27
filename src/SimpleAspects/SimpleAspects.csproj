@@ -43,8 +43,9 @@
     <AssemblyOriginatorKeyFile>SimpleAspects.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Sigil">
-      <HintPath>..\packages\Sigil.4.4.0\lib\net35\Sigil.dll</HintPath>
+    <Reference Include="Sigil, Version=4.5.0.0, Culture=neutral, PublicKeyToken=2d06c3494341c8ab, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Sigil.4.5.0\lib\net35\Sigil.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -55,6 +56,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AspectFactory.cs" />
+    <None Include="packages.config" />
     <None Include="ProxyBuilder.cs.bkp" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="SimpleModuleBuilder.cs" />
@@ -69,7 +71,6 @@
     <Compile Include="StringParserAttribute.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="SimpleAspects.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

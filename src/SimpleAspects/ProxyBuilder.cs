@@ -101,7 +101,7 @@ namespace Simple
             var aspectFields = new List<AspectField>();
 
             foreach (var method in interfaceType.GetMethods(BindingFlags.Instance | BindingFlags.Public))
-                EmitMethodSigil(typeBuilder, method, realObjectField, aspectFields);
+                EmitMethod(typeBuilder, method, realObjectField, aspectFields);
 
             typeBuilder.AddInterfaceImplementation(interfaceType);
             var ret = typeBuilder.CreateType();
@@ -130,26 +130,18 @@ namespace Simple
 
         private static MethodBuilder EmitCreateProxy(TypeBuilder typeBuilder, ConstructorBuilder ctor)
         {
-            /* //CreateProxy cannot be created because of a limitation on Sigil
             var createProxy = Sigil.Emit<Func<TInterfaceType,TInterfaceType>>.BuildStaticMethod(typeBuilder, "CreateProxy", MethodAttributes.Public | MethodAttributes.Static, true, false)
                                 .LoadArgument(0)
-                                .NewObject(ctor)
+                                .NewObject(ctor, Type.EmptyTypes)
                                 .Return()
-                                .CreateMethod();*/
-
-            var createProxy = typeBuilder.DefineMethod("CreateProxy", MethodAttributes.Static | MethodAttributes.Public, interfaceType, new[] { interfaceType });
-            ILGenerator il = createProxy.GetILGenerator();
-            il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Newobj, ctor);
-            il.Emit(OpCodes.Ret);
+                                .CreateMethod();
 
             return createProxy;
         }
 
-        private static void EmitMethodSigil(TypeBuilder typeBuilder, MethodInfo method, FieldBuilder realObjectField, List<AspectField> aspectFields)
+        private static void EmitMethod(TypeBuilder typeBuilder, MethodInfo method, FieldBuilder realObjectField, List<AspectField> aspectFields)
         {
             var parameters = method.GetParameters();
-            //var newMethod = typeBuilder.DefineMethod(method.Name, MethodAttributes.Public | MethodAttributes.Virtual, method.ReturnType, parameters.Select(i => i.ParameterType).ToArray());
 
             var emitter = Sigil.NonGeneric.Emit.BuildInstanceMethod(method.ReturnType, parameters.Select(i => i.ParameterType).ToArray(), typeBuilder, method.Name, MethodAttributes.Public | MethodAttributes.Virtual);
 
@@ -271,125 +263,6 @@ namespace Simple
             emitter.Return();
 
             var newMethod = emitter.CreateMethod();
-            typeBuilder.DefineMethodOverride(newMethod, method);
-        }
-
-        private static void EmitMethod(TypeBuilder typeBuilder, MethodInfo method, FieldBuilder realObjectField, List<AspectField> aspectFields)
-        {
-            var parameters = method.GetParameters();
-            var newMethod = typeBuilder.DefineMethod(method.Name, MethodAttributes.Public | MethodAttributes.Virtual, method.ReturnType, parameters.Select(i => i.ParameterType).ToArray());
-
-            var il = newMethod.GetILGenerator();
-
-            //il.Emit(OpCodes.Ldstr, "Method Invoked: " + method.Name);
-            //il.EmitCall(OpCodes.Call, typeof(Debug).GetMethod("WriteLine", new[] { typeof(string) }), Type.EmptyTypes);
-
-            var lbCallBase = il.DefineLabel();
-            var lbReturn = il.DefineLabel();
-
-            var methodContextLocal = il.DeclareLocal(typeof(MethodContext));
-            var returnLocal = method.ReturnType != typeof(void) ? il.DeclareLocal(method.ReturnType) : null;
-            var objArrayLocal = il.DeclareLocal(typeof(object[]));
-            var attrs = method.GetCustomAttributes(typeof(AspectAttribute), false).Cast<AspectAttribute>().Concat(AspectFactory.GlobalAspects).ToList();
-
-            if (attrs.Any())
-            {
-                il.Emit(OpCodes.Ldtoken, method);
-                il.Emit(OpCodes.Call, typeof(MethodBase).GetMethod("GetMethodFromHandle", new[] { typeof(RuntimeMethodHandle) }));
-                il.Emit(OpCodes.Castclass, typeof(MethodInfo)); //MethodInfo
-
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldfld, realObjectField); //this.realObject
-
-                il.Emit(OpCodes.Ldc_I4, parameters.Length);
-                il.Emit(OpCodes.Newarr, typeof(object));
-                il.Emit(OpCodes.Stloc, objArrayLocal.LocalIndex); //var parameters = new object[parameters.Length];
-
-                for (int i = 0; i < parameters.Length; i++)
-                {
-                    il.Emit(OpCodes.Ldloc, objArrayLocal.LocalIndex);
-                    il.Emit(OpCodes.Ldc_I4, i);
-                    il.Emit(OpCodes.Ldarg, (i + 1));
-                    if (parameters[i].ParameterType.IsValueType)
-                        il.Emit(OpCodes.Box, parameters[i].ParameterType);
-                    il.Emit(OpCodes.Stelem_Ref); // parameters[i] = paramN;
-                }
-
-                il.Emit(OpCodes.Ldloc, objArrayLocal.LocalIndex);
-                il.EmitCall(OpCodes.Call, typeof(ProxyBase).GetMethod("GetMethodContext", BindingFlags.Static | BindingFlags.NonPublic), Type.EmptyTypes);
-                il.Emit(OpCodes.Stloc, methodContextLocal.LocalIndex); //methodContextLocal = GetMethodContext(parameters);
-            }
-
-            var currentMethodAspects = new List<AspectField>();
-            foreach (var attr in attrs.OrderBy(i => i.Order))
-            {
-                var field = typeBuilder.DefineField("aspectField_" + Guid.NewGuid(), typeof(AspectAttribute), FieldAttributes.Static | FieldAttributes.Private);
-                aspectFields.Add(new AspectField { Aspect = attr, Field = field });
-                currentMethodAspects.Add(new AspectField { Aspect = attr, Field = field });
-
-                il.Emit(OpCodes.Ldsfld, field);
-                il.Emit(OpCodes.Ldloc, methodContextLocal.LocalIndex);
-                il.EmitCall(OpCodes.Callvirt, typeof(AspectAttribute).GetMethod("InterceptStart", BindingFlags.Instance | BindingFlags.Public), Type.EmptyTypes);
-                if (method.ReturnType != typeof(void))
-                {
-                    il.Emit(OpCodes.Ldloc, methodContextLocal.LocalIndex);
-                    il.EmitCall(OpCodes.Call, typeof(MethodContext).GetProperty("ReturnValue").GetGetMethod(), Type.EmptyTypes);
-                    il.Emit(OpCodes.Brtrue, lbReturn);
-                }
-            }
-
-            //Chama o método base
-            il.MarkLabel(lbCallBase);
-
-            if (attrs.Any() && method.ReturnType != typeof(void))  //Armazena o objeto retornado no ReturnValue caso haja aspectos
-                il.Emit(OpCodes.Ldloc, methodContextLocal.LocalIndex);
-
-            il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Ldfld, realObjectField);
-            for (int i = 0; i < parameters.Length; i++)
-                il.Emit(OpCodes.Ldarg, (i + 1));
-            il.EmitCall(OpCodes.Callvirt, method, Type.EmptyTypes);
-            if (method.ReturnType != typeof(void))
-            {
-                il.Emit(OpCodes.Stloc, returnLocal.LocalIndex);
-                //il.Emit(OpCodes.Pop);
-            }
-
-            //Armazena o objeto retornado no ReturnValue caso haja aspectos
-            if (method.ReturnType != typeof(void) && attrs.Any())
-            {
-                il.Emit(OpCodes.Ldloc, returnLocal.LocalIndex);
-                if (method.ReturnType.IsValueType)
-                    il.Emit(OpCodes.Box, method.ReturnType);
-
-                il.EmitCall(OpCodes.Call, typeof(MethodContext).GetProperty("ReturnValue").GetSetMethod(), Type.EmptyTypes);
-            }
-
-            il.MarkLabel(lbReturn);
-            foreach (var aspects in currentMethodAspects.OrderByDescending(i => i.Aspect.Order))
-            {
-                il.Emit(OpCodes.Ldsfld, aspects.Field);
-                il.Emit(OpCodes.Ldloc, methodContextLocal.LocalIndex);
-                il.EmitCall(OpCodes.Callvirt, typeof(AspectAttribute).GetMethod("InterceptEnd", BindingFlags.Instance | BindingFlags.Public), Type.EmptyTypes);
-            }
-
-            if (method.ReturnType != typeof(void))
-            {
-                if (attrs.Any())
-                {
-                    il.Emit(OpCodes.Ldloc, methodContextLocal.LocalIndex);
-                    il.EmitCall(OpCodes.Call, typeof(MethodContext).GetProperty("ReturnValue").GetGetMethod(), Type.EmptyTypes);
-
-                    if (method.ReturnType.IsValueType)
-                        il.Emit(OpCodes.Unbox, method.ReturnType);
-                    il.Emit(OpCodes.Stloc, returnLocal.LocalIndex);
-                }
-
-                if (method.ReturnType != typeof(void))
-                    il.Emit(OpCodes.Ldloc, returnLocal.LocalIndex);
-            }
-
-            il.Emit(OpCodes.Ret);
             typeBuilder.DefineMethodOverride(newMethod, method);
         }
 
