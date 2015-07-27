@@ -39,8 +39,9 @@ namespace Simple
         /// <summary>
         /// Method called when an exception occurs.
         /// </summary>
+        /// <param name="method"></param>
         /// <param name="exception"></param>
-        public virtual void ExceptionFilter(Exception exception)
+        public virtual void ExceptionFilter(MethodContext method, Exception exception)
         {
 
         }

@@ -130,7 +130,7 @@ namespace Simple
 
         private static MethodBuilder EmitCreateProxy(TypeBuilder typeBuilder, ConstructorBuilder ctor)
         {
-            var createProxy = Sigil.Emit<Func<TInterfaceType,TInterfaceType>>.BuildStaticMethod(typeBuilder, "CreateProxy", MethodAttributes.Public | MethodAttributes.Static, true, false)
+            var createProxy = Sigil.Emit<Func<TInterfaceType, TInterfaceType>>.BuildStaticMethod(typeBuilder, "CreateProxy", MethodAttributes.Public | MethodAttributes.Static, true, false)
                                 .LoadArgument(0)
                                 .NewObject(ctor, Type.EmptyTypes)
                                 .Return()
@@ -249,8 +249,9 @@ namespace Simple
                 foreach (var aspect in currentMethodAspects.Where(i => i.Aspect.GetType().GetMethod("ExceptionFilter").DeclaringType != typeof(AspectAttribute)))
                     emitter
                         .LoadField(aspect.Field)
+                        .LoadLocal(methodContextLocal)
                         .LoadLocal(exceptionLocal)
-                        .CallVirtual(typeof(AspectAttribute).GetMethod("ExceptionFilter", BindingFlags.Instance | BindingFlags.Public)); ;
+                        .CallVirtual(typeof(AspectAttribute).GetMethod("ExceptionFilter", BindingFlags.Instance | BindingFlags.Public));
 
                 emitter
                     .ReThrow()

@@ -10,12 +10,10 @@ namespace Simple.Tests
     {
         public static event Action<Exception> DefaultHandler; 
 
-        public override void ExceptionFilter(Exception exception)
+        public override void ExceptionFilter(MethodContext method, Exception exception)
         {
             if (DefaultHandler != null)
                 DefaultHandler(exception);
-
-            base.ExceptionFilter(exception);
         }
     }
 }
