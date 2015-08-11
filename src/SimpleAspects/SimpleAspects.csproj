@@ -62,7 +62,7 @@
     <Compile Include="SimpleModuleBuilder.cs" />
     <Compile Include="Aspect.cs" />
     <Compile Include="Aspects\CacheAspectAttribute.cs" />
-    <Compile Include="Aspects\LogAspectAttribute.cs" />
+    <Compile Include="Aspects\PerformanceLogAspectAttribute.cs" />
     <Compile Include="MethodContext.cs" />
     <Compile Include="MethodParameter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -52,7 +52,6 @@ namespace Simple.Tests
             var u3 = repository.GetById(user.Id);
 
             Assert.AreEqual(1, realRepository.GetByIdCount);
-
         }
 
 
@@ -153,6 +152,28 @@ namespace Simple.Tests
             {
                 Assert.AreEqual(ex, filteredException);
             }
+        }
+
+        [TestMethod]
+        public void ShouldCacheIEnumerableParameter()
+        {
+            var realRepository = new UserRepository();
+            var repository = AspectFactory.Create<IUserRepository>(realRepository);
+
+            Guid id1, id2;
+            repository.Save(new User { Id = id1 = Guid.NewGuid(), Name = "User 1" });
+            repository.Save(new User { Id = id2 = Guid.NewGuid(), Name = "User 2" });
+
+            var l1 = repository.List(new[] { id1, id2 });
+            var l2 = repository.List(new[] { id1, id2 });
+            l2 = repository.List(new[] { id1, id2 });
+
+            var l3 = repository.ListParams(id1, id2);
+            var l4 = repository.ListParams(id1, id2);
+            l4 = repository.ListParams(id1, id2);
+
+            Assert.AreEqual(1, realRepository.ListCount);
+            Assert.AreEqual(1, realRepository.ListParamsCount);
         }
     }
 }

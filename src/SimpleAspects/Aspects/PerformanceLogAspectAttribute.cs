@@ -9,7 +9,7 @@ namespace Simple.Aspects
     /// <summary>
     /// Default log aspect implementation.
     /// </summary>
-    public abstract class LogAspectAttribute : AspectAttribute
+    public abstract class PerformanceLogAspectAttribute : AspectAttribute
     {
         /// <summary>
         /// Defines order to interception. Lower priority gets MethodEnter called earlier.

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -43,11 +44,36 @@ namespace Simple
         {
             if (this.Value == null)
                 return "[[null]]";
+
             var attr = this.Parameter.GetCustomAttributes(typeof(StringParserAttribute), true).Cast<StringParserAttribute>().FirstOrDefault();
-            if (attr == null)
+            if (attr != null)
+                return attr.GetStringValue(this.Value);
+
+            if (this.Value is string)
                 return this.Value.ToString();
 
-            return attr.GetStringValue(this.Value);
+            if (this.Value is IEnumerable)
+                return string.Join(",", GetValues(this.Value as IEnumerable).ToArray());
+
+            return this.Value.ToString();
+        }
+
+        private IEnumerable<string> GetValues(IEnumerable enumerable)
+        {
+            var enumerator = enumerable.GetEnumerator();
+
+            try
+            {
+                while (enumerator.MoveNext())
+                {
+                    yield return (enumerator.Current ?? "").ToString();
+                }
+            }
+            finally
+            {
+                if (enumerator is IDisposable)
+                    ((IDisposable)enumerator).Dispose();
+            }
         }
     }
 }
