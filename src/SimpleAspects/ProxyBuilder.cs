@@ -123,9 +123,6 @@ namespace Simple
             foreach (var ctor in baseType.GetConstructors())
             {
                 var parameters = ctor.GetParameters().Select(i => i.ParameterType).ToArray();
-                if (parameters.Length == 0)
-                    continue;
-
                 var ctorBuilder = Sigil.NonGeneric.Emit.BuildConstructor(parameters, typeBuilder, MethodAttributes.Public)
                                                             .LoadArgument(0);
 
