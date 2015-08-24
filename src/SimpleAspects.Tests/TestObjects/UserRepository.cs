@@ -22,15 +22,23 @@ namespace Simple.Tests
 
     public class UserRepository : IUserRepository
     {
-        private List<User> users = new List<User>();
+        public UserRepository()
+        {
+        }
+        public UserRepository(IList<User> users)
+        {
+            this.Users = users;
+        }
+
+        public readonly IList<User> Users = new List<User>();
 
         public void Save(User user)
         {
-            var current = users.FirstOrDefault(i => i.Id == user.Id);
+            var current = Users.FirstOrDefault(i => i.Id == user.Id);
             if (current != null)
-                users.Remove(current);
+                Users.Remove(current);
 
-            users.Add(user);
+            Users.Add(user);
         }
 
         public int GetByIdCount = 0;
@@ -40,20 +48,20 @@ namespace Simple.Tests
         public User GetById(Guid id)
         {
             GetByIdCount++;
-            return users.FirstOrDefault(i => i.Id == id);
+            return Users.FirstOrDefault(i => i.Id == id);
         }
 
 
         public IList<User> List(IEnumerable<Guid> ids)
         {
             ListCount++;
-            return this.users.Where(u => ids.Contains(u.Id)).ToList();
+            return this.Users.Where(u => ids.Contains(u.Id)).ToList();
         }
 
         public IList<User> ListParams(params Guid[] ids)
         {
             ListParamsCount++;
-            return this.users.Where(u => ids.Contains(u.Id)).ToList();
+            return this.Users.Where(u => ids.Contains(u.Id)).ToList();
         }
     }
 }

@@ -61,10 +61,11 @@ namespace Simple
         /// Gets the proxy type.
         /// </summary>
         /// <typeparam name="TInterfaceType"></typeparam>
+        /// <param name="baseType"></param>
         /// <returns></returns>
-        public static Type GetProxyType<TInterfaceType>()
+        public static Type CreateProxyType<TInterfaceType>(Type baseType = null)
         {
-            return ProxyBuilder<TInterfaceType>.ProxyType;
+            return ProxyBuilder<TInterfaceType>.CreateType(baseType);
         }
 
         /// <summary>

@@ -25,19 +25,6 @@ namespace Simple
             }
         }
 
-        public static Type ProxyType
-        {
-            get
-            {
-                if (!IsReady)
-                    CreateProxyBuilder();
-
-                if (_buildException != null)
-                    throw new InvalidOperationException("An error occurred while generating proxy.", _buildException);
-
-                return _proxyType;
-            }
-        }
         public static Func<TInterfaceType, TInterfaceType> Builder
         {
             get
@@ -67,7 +54,7 @@ namespace Simple
 
             try
             {
-                _proxyType = BuildType();
+                _proxyType = CreateType();
             }
             catch (Exception ex)
             {
@@ -75,14 +62,14 @@ namespace Simple
                 _builder = (o) => { throw ex; };
             }
 
-            Delegate deleg = Delegate.CreateDelegate(typeof(Func<TInterfaceType, TInterfaceType>), ProxyType.GetMethod("CreateProxy", BindingFlags.Public | BindingFlags.Static));
+            Delegate deleg = Delegate.CreateDelegate(typeof(Func<TInterfaceType, TInterfaceType>), _proxyType.GetMethod("CreateProxy", BindingFlags.Public | BindingFlags.Static));
             _builder = (Func<TInterfaceType, TInterfaceType>)deleg;
         }
 
-        private static Type BuildType()
+        public static Type CreateType(Type baseType = null)
         {
-            System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
-            System.Threading.Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo("en-US");
+            if (_proxyType != null && baseType == null)
+                return _proxyType;
 
             if (!interfaceType.IsInterface)
                 throw new NotSupportedException("An interface was expected, but a type was found: " + interfaceType.FullName);
@@ -94,6 +81,9 @@ namespace Simple
 
             TypeBuilder typeBuilder = module.DefineType(interfaceType.Name.Substring(1) + "SimpleProxy", TypeAttributes.Public, typeof(ProxyBase));
             FieldBuilder realObjectField = typeBuilder.DefineField("realObject", interfaceType, FieldAttributes.Private);
+
+            if (baseType != null)
+                EmitBaseConstructors(typeBuilder, realObjectField, baseType);
 
             var ctor = EmitConstructor(typeBuilder, realObjectField);
             var createProxy = EmitCreateProxy(typeBuilder, ctor);
@@ -117,7 +107,7 @@ namespace Simple
 
         private static ConstructorBuilder EmitConstructor(TypeBuilder typeBuilder, FieldBuilder realObjectField)
         {
-            return Sigil.Emit<Action<object>>.BuildConstructor(typeBuilder, MethodAttributes.Public)
+            return Sigil.Emit<Action<object>>.BuildConstructor(typeBuilder, MethodAttributes.Family)
                     .LoadArgument(0)
                     .Call(typeBuilder.BaseType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null))
                     .LoadArgument(0)
@@ -126,6 +116,28 @@ namespace Simple
                     .StoreField(realObjectField)
                     .Return()
                     .CreateConstructor();
+        }
+
+        private static void EmitBaseConstructors(TypeBuilder typeBuilder, FieldBuilder realObjectField, Type baseType)
+        {
+            foreach (var ctor in baseType.GetConstructors())
+            {
+                var parameters = ctor.GetParameters().Select(i => i.ParameterType).ToArray();
+                if (parameters.Length == 0)
+                    continue;
+
+                var ctorBuilder = Sigil.NonGeneric.Emit.BuildConstructor(parameters, typeBuilder, MethodAttributes.Public)
+                                                            .LoadArgument(0);
+
+                for (int i = 0; i < parameters.Length; i++)
+                    ctorBuilder.LoadArgument((ushort)(i + 1));
+
+                ctorBuilder
+                    .NewObject(ctor)
+                    .StoreField(realObjectField)
+                    .Return()
+                    .CreateConstructor();
+            }
         }
 
         private static MethodBuilder EmitCreateProxy(TypeBuilder typeBuilder, ConstructorBuilder ctor)

@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Simple.Aspects;
 using System.Diagnostics;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Simple.Tests
 {
@@ -111,7 +112,7 @@ namespace Simple.Tests
             var obj = new ParameterPassingTest(pInt: 99, pString: "teste");
 
             var proxy = AspectFactory.Create<IParameterPassingTest>(obj);
-            
+
             proxy.Test4Void();
             int vInt = proxy.Test4Int();
             string vString = proxy.Test4String();
@@ -131,7 +132,7 @@ namespace Simple.Tests
             string vString;
             DateTime vDateTime;
             proxy.Teste5(out vInt, out vString, out vDateTime);
-           
+
             Assert.AreEqual(obj.PInt, vInt);
             Assert.AreEqual(obj.PString, vString);
             Assert.AreEqual(obj.PDateTime, vDateTime);
@@ -148,7 +149,7 @@ namespace Simple.Tests
             {
                 proxy.RaiseException();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Assert.AreEqual(ex, filteredException);
             }
@@ -174,6 +175,18 @@ namespace Simple.Tests
 
             Assert.AreEqual(1, realRepository.ListCount);
             Assert.AreEqual(1, realRepository.ListParamsCount);
+        }
+
+        [TestMethod]
+        public void ShouldProxyBaseConstructors()
+        {
+            var type = AspectFactory.CreateProxyType<IUserRepository>(typeof(UserRepository));
+
+            IList<User> users = new[] { new User { Id = Guid.NewGuid(), Name = "Name" } };
+            IUserRepository userRepository = (IUserRepository)Activator.CreateInstance(type, users);
+            var user = userRepository.GetById(users[0].Id);
+
+            Assert.AreEqual(users[0], user);
         }
     }
 }
