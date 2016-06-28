@@ -4,13 +4,16 @@ A simple AOP framework
 Usage:
 
 Interface:
+```csharp
 public interface IUserService
 {
     [LogPerformanceAspect]
     User GetById(Guid id);
 }
+```
 
 Aspect:
+```csharp
 public class LogPerformanceAspectAttribute : AspectAttribute
 {
     public override void MethodEnter(MethodContext method)
@@ -28,8 +31,10 @@ public class LogPerformanceAspectAttribute : AspectAttribute
         Console.WriteLine("Method '{0}' took {1} seconds.", method.Method.Name, sw.Elapsed.TotalSeconds);
     }
 }
-
+```
 How proxies are created:
+```csharp
 var userService = AspectFactory.Create<IUserService>(new UserService()); 
 //UserService here is the real implementation, which aspects would be applied to.
 //This can be used in DI container.
+```
